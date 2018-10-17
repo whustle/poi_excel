@@ -1,26 +1,47 @@
 package com.lz.web.controller;
 
+import com.lz.bean.User;
+import com.lz.common.util.DateFormatUtil;
+import com.lz.service.UserService;
+import lombok.extern.log4j.Log4j;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.util.List;
+import java.util.UUID;
 
-@RestController
+
+@Log4j
+@Controller
 public class ExcelController {
+	@Autowired
+	private UserService userService;
 	@RequestMapping("/upload")
-	public String upload(MultipartFile myFile){
-		System.out.println("-------");
+	public String importExcel(MultipartFile myFile){
+		System.out.println("dsfsdfsfsfdsfs");
 		try {
 			InputStream is = myFile.getInputStream();
-			System.out.println(is);
 			String fileName = myFile.getOriginalFilename();
-			System.out.println(fileName);
 			if(fileName.endsWith("xls")) {
 				HSSFWorkbook hw = new HSSFWorkbook(is);
 				parseExcel(hw);
@@ -33,71 +54,92 @@ public class ExcelController {
 			e.printStackTrace();
 		}
 
-		return null;
+		return "success";
 	}
 
 	private void parseExcel(Workbook wb) {
 		int sheetNum = wb.getNumberOfSheets();
 		for (int i = 0; i < sheetNum; i++) {
 			Sheet sheet =  wb.getSheetAt(i);
-			int count = 0;
 			for (Row row : sheet
 					) {
-				System.out.println(row.getRowNum());
-				if (count == 0) {
-					count++;
+				if (row.getRowNum() == 0) {
 					continue;
 				}
 				short lastCellNum = row.getLastCellNum();
-				System.out.println("LastCellNum"+lastCellNum);
 				for (int j = 0; j < lastCellNum; j++) {
 					Cell cell = row.getCell(j);
-					System.out.println("cell"+cell);
-					System.out.println(cell.getCellType());
-					System.out.println(CellType.STRING);
-					cell.getStringCellValue();
-					System.out.println(cell.getStringCellValue());
 				}
 			}
 		}
 	}
-	/*private static String getValue(Cell xssfCell, Workbook workbook) {
+	private String getValue(Cell cell, Workbook workbook) {
 		String value = "";
-		switch (xssfCell.getCellType()) {
-			case Cell.CELL_TYPE_STRING:
-				value = String.valueOf(xssfCell.getRichStringCellValue()
-						.getString());
-				System.out.print("|");
+		switch (cell.getCellType()) {
+			case STRING:
+				value = cell.getStringCellValue();
 				break;
-			case Cell.CELL_TYPE_NUMERIC:
-				if (DateUtil.isCellDateFormatted(xssfCell)) {
-					value = String.valueOf(String.valueOf(xssfCell
-							.getDateCellValue()));
+			case NUMERIC:
+				if (DateUtil.isCellDateFormatted(cell)) {
+					value = DateFormatUtil.formatDate(cell.getDateCellValue());
 				} else {
-					value = String.valueOf(xssfCell.getNumericCellValue());
+					value = String.valueOf(cell.getNumericCellValue());
 				}
-				System.out.print("|");
 				break;
-			case Cell.CELL_TYPE_BOOLEAN:
-				value = String.valueOf(xssfCell.getBooleanCellValue());
-				System.out.print("|");
+			case BOOLEAN:
+				value = String.valueOf(cell.getBooleanCellValue());
 				break;
 			// 公式,
-			case Cell.CELL_TYPE_FORMULA:
+			case FORMULA:
 				// 获取Excel中用公式获取到的值,//=SUM(P4-Q4-R4-S4)Excel用这种类似的公式计算出来的值用POI无法获取，要想获取的话，就必须一下操作
 				FormulaEvaluator evaluator = workbook.getCreationHelper()
 						.createFormulaEvaluator();
-				evaluator.evaluateFormulaCell(xssfCell);
-				CellValue cellValue = evaluator.evaluate(xssfCell);
+				evaluator.evaluateFormulaCell(cell);
+				CellValue cellValue = evaluator.evaluate(cell);
 				value = String.valueOf(cellValue.getNumberValue());
 				break;
-			case Cell.CELL_TYPE_ERROR:
-				value = String.valueOf(xssfCell.getErrorCellValue());
+			case ERROR:
+				value = String.valueOf(cell.getErrorCellValue());
 				break;
 			default:
 		}
 		return value;
 	}
-*/
-
+	@RequestMapping("/export")
+	public ResponseEntity<byte[]> export(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException {
+		System.out.println("dsfsdf");
+		List<User> users = userService.getUsers();
+		XSSFWorkbook xf=new XSSFWorkbook();
+		XSSFSheet sheet = xf.createSheet();
+		sheet.setHorizontallyCenter(true);
+		XSSFRow row = sheet.createRow(0);
+		XSSFCell cell = row.createCell(0);
+		cell.setCellValue("学号");
+		cell.setCellValue("姓名");
+		cell.setCellValue("年龄");
+		for (int i = 0; i < users.size(); i++) {
+			XSSFCell cell1 = row.createCell(i+1);
+			User user = users.get(i);
+			cell1.setCellValue(user.getId());
+			cell1.setCellValue(user.getName());
+			cell1.setCellValue(user.getAge());
+		}
+		ByteArrayOutputStream bos=new ByteArrayOutputStream();
+		try {
+			xf.write(bos);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		UUID uuid = UUID.randomUUID();
+		String fileName = new String((uuid.toString()+"_student.xls").getBytes("UTF-8"), "iso-8859-1");
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+		headers.setContentDispositionFormData("attachment", fileName);
+		return new ResponseEntity<byte[]>(bos.toByteArray(),headers,HttpStatus.CREATED);
+	}
+	@RequestMapping("/test")
+	public String test(){
+		System.out.println("dsfsdf");
+		return "success";
+	}
 }

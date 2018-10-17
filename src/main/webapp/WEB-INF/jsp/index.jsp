@@ -12,14 +12,16 @@
     <script>
         $(function(){
             $("#but1").upload({
-                action: 'upload',
+                action: 'http://localhost:8089/upload',
                 name: 'myFile'
             });
-
+            $("#but2").click(function () {
+                $.post("http://localhost:8089/export")
+            });
         });
     </script>
 </head>
 <body>
-<input id="but1" type="button" value="upload">
+<input id="but1" type="button" value="导入">
 </body>
 </html>
