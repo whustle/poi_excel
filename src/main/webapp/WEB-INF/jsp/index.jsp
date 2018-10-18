@@ -12,11 +12,11 @@
     <script>
         $(function(){
             $("#but1").upload({
-                action: 'http://localhost:8089/upload',
+                action: 'import',
                 name: 'myFile'
             });
             $("#but2").click(function () {
-                $.post("http://localhost:8089/export")
+                $.post("export")
             });
         });
     </script>

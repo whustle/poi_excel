@@ -5,4 +5,7 @@
     <select id="findAll" resultType="User">
         select id,name,age from t_user
     </select>
+    <insert id="saveUser" parameterType="User">
+        insert into t_user values (null ,#{name},#{age})
+    </insert>
 </mapper>

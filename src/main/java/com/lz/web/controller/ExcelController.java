@@ -2,6 +2,7 @@ package com.lz.web.controller;
 
 import com.lz.bean.User;
 import com.lz.common.util.DateFormatUtil;
+import com.lz.common.util.StringUtil;
 import com.lz.service.UserService;
 import lombok.extern.log4j.Log4j;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -28,6 +29,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 
 @Log4j
@@ -35,9 +37,8 @@ import java.util.UUID;
 public class ExcelController {
 	@Autowired
 	private UserService userService;
-	@RequestMapping("/upload")
+	@RequestMapping("/import")
 	public String importExcel(MultipartFile myFile){
-		System.out.println("dsfsdfsfsfdsfs");
 		try {
 			InputStream is = myFile.getInputStream();
 			String fileName = myFile.getOriginalFilename();
@@ -46,7 +47,6 @@ public class ExcelController {
 				parseExcel(hw);
 			}else if (fileName.endsWith("xlsx")){
 				XSSFWorkbook xw = new XSSFWorkbook(is);
-				System.out.println(xw);
 				parseExcel(xw);
 			}
 		} catch (IOException e) {
@@ -57,6 +57,8 @@ public class ExcelController {
 	}
 
 	private void parseExcel(Workbook wb) {
+		User user=new User();
+		CopyOnWriteArrayList list=new CopyOnWriteArrayList();
 		int sheetNum = wb.getNumberOfSheets();
 		for (int i = 0; i < sheetNum; i++) {
 			Sheet sheet =  wb.getSheetAt(i);
@@ -68,8 +70,19 @@ public class ExcelController {
 				short lastCellNum = row.getLastCellNum();
 				for (int j = 0; j < lastCellNum; j++) {
 					Cell cell = row.getCell(j);
+					log.info(getValue(cell,wb));
+					list.add(getValue(cell,wb));
 				}
+				String id=(String)list.get(0);
+				String name=(String)list.get(1);
+				String age=(String)list.get(2);
+
+				user.setId(StringUtil.StringToInt(id));
+				user.setName(name);
+				user.setAge(StringUtil.StringToInt(age));
+				list.clear();
 			}
+			userService.saveUser(user);
 		}
 	}
 	private String getValue(Cell cell, Workbook workbook) {

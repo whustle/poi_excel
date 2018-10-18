@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 @Service
 @Log4j
+
 public class UserServiceImpl implements UserService {
 	@Autowired
 	private UserDao userDao;
@@ -17,5 +18,10 @@ public class UserServiceImpl implements UserService {
 	public List<User> getUsers() {
 		List<User> users = userDao.findAll();
 		return users;
+	}
+
+	@Override
+	public void saveUser(User user) {
+		userDao.saveUser(user);
 	}
 }
