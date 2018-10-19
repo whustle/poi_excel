@@ -81,8 +81,8 @@ public class ExcelController {
 				user.setName(name);
 				user.setAge(StringUtil.StringToInt(age));
 				list.clear();
+				userService.saveUser(user);
 			}
-			userService.saveUser(user);
 		}
 	}
 	private String getValue(Cell cell, Workbook workbook) {
@@ -121,6 +121,7 @@ public class ExcelController {
 	public ResponseEntity<byte[]> export(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException {
 		System.out.println("dsfsdf");
 		List<User> users = userService.getUsers();
+		System.out.println(users);
 		XSSFWorkbook xf=new XSSFWorkbook();
 		XSSFSheet sheet = xf.createSheet();
 		sheet.setHorizontallyCenter(true);
@@ -147,12 +148,8 @@ public class ExcelController {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
 		headers.setContentDispositionFormData("attachment", fileName);
+		System.out.println("success");
 		return new ResponseEntity<byte[]>(bos.toByteArray(),headers,HttpStatus.CREATED);
 	}
-	@RequestMapping("/test")
-	public String test(){
-		System.out.println("dsfsdf");
-		User user = new User();
-		return "success";
-	}
+
 }

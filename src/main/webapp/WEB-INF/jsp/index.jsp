@@ -23,5 +23,6 @@
 </head>
 <body>
 <input id="but1" type="button" value="导入">
+<input id="but2" type="button" value="导出">
 </body>
 </html>
